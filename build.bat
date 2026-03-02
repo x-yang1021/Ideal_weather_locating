@@ -36,13 +36,24 @@ pyinstaller ^
 echo.
 echo ============================================
 if exist "dist\ChinaWeatherFinder" (
-    echo  Build successful!
-    echo  Output: dist\ChinaWeatherFinder\ChinaWeatherFinder.exe
+    echo  打包成功！
+    echo  程序目录: dist\ChinaWeatherFinder\
+    echo  可执行文件: dist\ChinaWeatherFinder\ChinaWeatherFinder.exe
     echo.
-    echo  To run: double-click ChinaWeatherFinder.exe
-    echo  Then open http://localhost:8501 in your browser
+    echo  正在创建分发压缩包...
+    powershell -Command "Compress-Archive -Path 'dist\ChinaWeatherFinder' -DestinationPath 'dist\ChinaWeatherFinder.zip' -Force"
+    if exist "dist\ChinaWeatherFinder.zip" (
+        echo  压缩包已生成: dist\ChinaWeatherFinder.zip
+        echo.
+        echo  ========== 分发说明 ==========
+        echo  1. 将 dist\ChinaWeatherFinder.zip 发给对方
+        echo  2. 对方解压整个文件夹
+        echo  3. 双击 ChinaWeatherFinder.exe 运行
+        echo  4. 浏览器打开 http://localhost:8501
+        echo  注意：不要把 .exe 从文件夹中单独拿出，它依赖同目录下的文件！
+    )
 ) else (
-    echo  Build failed. Check the output above for errors.
+    echo  打包失败，请检查上方错误信息。
 )
 echo ============================================
 pause
