@@ -1,8 +1,7 @@
 """
-China Weather Forecast City Finder (中国天气预报城市筛选器)
+中国天气预报城市筛选器
 
-Select provinces, set temperature/weather/date criteria,
-and find cities with consecutive days matching your ideal weather.
+选择省份，设置温度、天气和连续天数条件，找到未来10天内符合理想天气的城市。
 """
 
 import streamlit as st
@@ -16,16 +15,15 @@ from weather_api import (
 
 st.set_page_config(page_title="理想天气城市筛选器", page_icon="🌤️", layout="wide")
 st.title("理想天气城市筛选器")
-st.caption("China Ideal Weather City Finder — 找到未来10天符合你理想天气的城市")
+st.caption("找到未来10天符合你理想天气的城市")
 
-# --- Sidebar: Province Selection ---
-st.sidebar.header("1. 选择省份 (Select Provinces)")
+# --- 侧边栏：省份选择 ---
+st.sidebar.header("1. 选择省份")
 
-# Quick select buttons
 col1, col2 = st.sidebar.columns(2)
-if col1.button("全选 (Select All)"):
+if col1.button("全选"):
     st.session_state["selected_provinces"] = PROVINCE_NAMES.copy()
-if col2.button("清空 (Clear)"):
+if col2.button("清空"):
     st.session_state["selected_provinces"] = []
 
 selected_provinces = st.sidebar.multiselect(
@@ -35,55 +33,54 @@ selected_provinces = st.sidebar.multiselect(
     key="selected_provinces",
 )
 
-# Show city count
 total_cities = sum(
     len(PROVINCES_CITIES[p]) for p in selected_provinces
 )
 st.sidebar.info(f"已选 {len(selected_provinces)} 个省份，共 {total_cities} 个城市")
 
-# --- Sidebar: Filter Criteria ---
-st.sidebar.header("2. 筛选条件 (Filter Criteria)")
+# --- 侧边栏：筛选条件 ---
+st.sidebar.header("2. 筛选条件")
 
 min_consecutive = st.sidebar.slider(
-    "最少连续天数 (Min consecutive days)",
+    "最少连续天数",
     min_value=1, max_value=10, value=3,
 )
 
 temp_range = st.sidebar.slider(
-    "温度范围 °C (Temperature range)",
+    "温度范围 (°C)",
     min_value=-40, max_value=50, value=(10, 20),
 )
 
 weather_filters = st.sidebar.multiselect(
-    "天气条件 (Weather conditions) — 留空则不限",
+    "天气条件（留空则不限）",
     list(WEATHER_CATEGORIES.keys()),
     default=[],
 )
 
-# --- Sidebar: API Settings ---
-st.sidebar.header("3. API 设置 (API Settings)")
+# --- 侧边栏：数据源设置 ---
+st.sidebar.header("3. 天气数据源")
 api_provider = st.sidebar.radio(
-    "天气数据源",
-    ["Open-Meteo (免费，无需密钥)", "QWeather 和风天气 (需要API Key)"],
+    "选择数据源",
+    ["Open-Meteo（免费，无需密钥）", "和风天气（需要密钥）"],
     index=0,
 )
 
 qweather_key = ""
-if "QWeather" in api_provider:
+if "和风天气" in api_provider:
     qweather_key = st.sidebar.text_input(
-        "QWeather API Key",
+        "和风天气 API 密钥",
         type="password",
-        help="在 https://dev.qweather.com 注册获取免费API Key",
+        help="在 https://dev.qweather.com 注册获取免费密钥",
     )
 
-provider_code = "qweather" if "QWeather" in api_provider else "open_meteo"
+provider_code = "qweather" if "和风天气" in api_provider else "open_meteo"
 
-# --- Main Area: Run Search ---
-if st.button("🔍 开始搜索 (Search)", type="primary", use_container_width=True):
+# --- 主区域：执行搜索 ---
+if st.button("🔍 开始搜索", type="primary", use_container_width=True):
     if not selected_provinces:
         st.warning("请先选择至少一个省份")
-    elif "QWeather" in api_provider and not qweather_key:
-        st.warning("请输入 QWeather API Key")
+    elif "和风天气" in api_provider and not qweather_key:
+        st.warning("请输入和风天气 API 密钥")
     else:
         qualifying_cities = []
         progress_bar = st.progress(0)
@@ -96,7 +93,7 @@ if st.button("🔍 开始搜索 (Search)", type="primary", use_container_width=T
                 city_index += 1
                 progress_bar.progress(city_index / total_cities)
                 status_text.text(
-                    f"正在查询 {city_cn} ({city_index}/{total_cities})..."
+                    f"正在查询 {city_cn}（{city_index}/{total_cities}）..."
                 )
 
                 forecast = fetch_forecast(
@@ -120,29 +117,26 @@ if st.button("🔍 开始搜索 (Search)", type="primary", use_container_width=T
                     qualifying_cities.append({
                         "省份": province,
                         "城市": city_cn,
-                        "City": city_en,
                         "连续天数": result["best_run_days"],
                         "开始日期": result["best_run_start"],
                         "结束日期": result["best_run_end"],
                         "forecast_detail": result["matching_forecast"],
                     })
 
-                # Rate limiting: be polite to the API
+                # 限速：避免请求过快
                 time.sleep(0.3)
 
         progress_bar.progress(1.0)
         status_text.text(f"搜索完成！共查询 {total_cities} 个城市")
 
-        # --- Display Results ---
+        # --- 显示结果 ---
         st.header(f"搜索结果：{len(qualifying_cities)} 个城市符合条件")
 
         if qualifying_cities:
-            # Summary table
             df = pd.DataFrame([
                 {
                     "省份": c["省份"],
                     "城市": c["城市"],
-                    "City": c["City"],
                     "最长连续天数": c["连续天数"],
                     "开始日期": c["开始日期"],
                     "结束日期": c["结束日期"],
@@ -152,19 +146,19 @@ if st.button("🔍 开始搜索 (Search)", type="primary", use_container_width=T
             df = df.sort_values("最长连续天数", ascending=False)
             st.dataframe(df, use_container_width=True, hide_index=True)
 
-            # Detailed forecast per city
-            st.subheader("详细预报 (Detailed Forecast)")
+            # 各城市详细预报
+            st.subheader("详细预报")
             for city in qualifying_cities:
                 with st.expander(
-                    f"{city['城市']} ({city['City']}) — "
-                    f"{city['连续天数']} 天 "
-                    f"({city['开始日期']} ~ {city['结束日期']})"
+                    f"{city['城市']} — "
+                    f"{city['连续天数']} 天"
+                    f"（{city['开始日期']} ~ {city['结束日期']}）"
                 ):
                     detail_df = pd.DataFrame([
                         {
                             "日期": d["date"],
-                            "最低温°C": d["temp_min"],
-                            "最高温°C": d["temp_max"],
+                            "最低温(°C)": d["temp_min"],
+                            "最高温(°C)": d["temp_max"],
                             "天气": d["weather_text"],
                         }
                         for d in city["forecast_detail"]
