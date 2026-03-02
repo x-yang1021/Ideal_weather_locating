@@ -201,3 +201,50 @@ def find_consecutive_matches(forecast: list[dict],
             ],
         }
     return {"qualifies": False, "best_run_days": best_run_len}
+
+
+def find_n_in_m_matches(forecast: list[dict],
+                        temp_min: float, temp_max: float,
+                        weather_filters: list[str],
+                        min_good_days: int,
+                        window_size: int) -> dict:
+    """
+    Sliding-window filter: find a window of `window_size` consecutive days
+    that contains at least `min_good_days` days matching ALL criteria
+    (temperature + weather).
+
+    Returns the best window (most good days). Each day in the window is
+    annotated with whether it matches.
+    """
+    # Tag each day
+    day_flags = []
+    for day in forecast:
+        temp_ok = day["temp_min"] >= temp_min and day["temp_max"] <= temp_max
+        weather_ok = matches_weather_filter(
+            day["weather_code"], day["weather_text"], weather_filters
+        )
+        day_flags.append(temp_ok and weather_ok)
+
+    best_count = 0
+    best_start = -1
+
+    for start in range(len(forecast) - window_size + 1):
+        count = sum(day_flags[start:start + window_size])
+        if count > best_count:
+            best_count = count
+            best_start = start
+
+    if best_count >= min_good_days and best_start >= 0:
+        window_forecast = []
+        for i in range(best_start, best_start + window_size):
+            entry = dict(forecast[i])
+            entry["matches"] = day_flags[i]
+            window_forecast.append(entry)
+        return {
+            "qualifies": True,
+            "good_days": best_count,
+            "window_start": forecast[best_start]["date"],
+            "window_end": forecast[best_start + window_size - 1]["date"],
+            "window_forecast": window_forecast,
+        }
+    return {"qualifies": False, "good_days": best_count}
