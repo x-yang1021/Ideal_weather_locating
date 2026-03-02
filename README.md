@@ -20,6 +20,16 @@ streamlit run app.py
 2. **设置条件** — 设置温度范围、天气条件、最少连续天数
 3. **点击搜索** — 查看符合条件的城市列表和详细预报
 
+## 打包为 Windows .exe (Build Windows Executable)
+
+在 Windows 上运行：
+
+```bat
+build.bat
+```
+
+生成的程序在 `dist\ChinaWeatherFinder\` 目录下，双击 `ChinaWeatherFinder.exe` 即可运行，然后在浏览器打开 http://localhost:8501 。
+
 ## 天气数据源 (Weather API)
 
 - **Open-Meteo** (默认): 免费，无需API Key，支持16天预报
