@@ -71,7 +71,7 @@ else:
 
 temp_range = st.sidebar.slider(
     "温度范围 (°C)",
-    min_value=-40, max_value=50, value=(10, 25),
+    min_value=-40, max_value=50, value=(10, 20),
 )
 
 weather_filters = st.sidebar.multiselect(
